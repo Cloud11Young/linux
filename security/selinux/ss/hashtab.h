@@ -42,7 +42,7 @@ struct hashtab_info {
  */
 struct hashtab *hashtab_create(u32 (*hash_value)(struct hashtab *h, const void *key),
 			       int (*keycmp)(struct hashtab *h, const void *key1, const void *key2),
-			       u32 size);
+			       u32 nel_hint);
 
 /*
  * Inserts the specified (key, datum) pair into the specified hash table.
@@ -84,9 +84,5 @@ int hashtab_map(struct hashtab *h,
 
 /* Fill info with some hash table statistics */
 void hashtab_stat(struct hashtab *h, struct hashtab_info *info);
-
-/* Use kmem_cache for hashtab_node */
-void hashtab_cache_init(void);
-void hashtab_cache_destroy(void);
 
 #endif	/* _SS_HASHTAB_H */

@@ -1,10 +1,10 @@
 /*
- * Marvell Wireless LAN device driver: station command handling
+ * NXP Wireless LAN device driver: station command handling
  *
- * Copyright (C) 2011-2014, Marvell International Ltd.
+ * Copyright 2011-2020 NXP
  *
- * This software file (the "File") is distributed by Marvell International
- * Ltd. under the terms of the GNU General Public License Version 2, June 1991
+ * This software file (the "File") is distributed by NXP
+ * under the terms of the GNU General Public License Version 2, June 1991
  * (the "License").  You may use, redistribute and/or modify this File in
  * accordance with the terms and conditions of the License, a copy of which
  * is available by writing to the Free Software Foundation, Inc.,
@@ -1898,6 +1898,25 @@ static int mwifiex_cmd_get_wakeup_reason(struct mwifiex_private *priv,
 	return 0;
 }
 
+static int mwifiex_cmd_get_chan_info(struct host_cmd_ds_command *cmd,
+				     u16 cmd_action)
+{
+	struct host_cmd_ds_sta_configure *sta_cfg_cmd = &cmd->params.sta_cfg;
+	struct host_cmd_tlv_channel_band *tlv_band_channel =
+	(struct host_cmd_tlv_channel_band *)sta_cfg_cmd->tlv_buffer;
+
+	cmd->command = cpu_to_le16(HostCmd_CMD_STA_CONFIGURE);
+	cmd->size = cpu_to_le16(sizeof(*sta_cfg_cmd) +
+				sizeof(*tlv_band_channel) + S_DS_GEN);
+	sta_cfg_cmd->action = cpu_to_le16(cmd_action);
+	memset(tlv_band_channel, 0, sizeof(*tlv_band_channel));
+	tlv_band_channel->header.type = cpu_to_le16(TLV_TYPE_CHANNELBANDLIST);
+	tlv_band_channel->header.len  = cpu_to_le16(sizeof(*tlv_band_channel) -
+					sizeof(struct mwifiex_ie_types_header));
+
+	return 0;
+}
+
 /* This function check if the command is supported by firmware */
 static int mwifiex_is_cmd_supported(struct mwifiex_private *priv, u16 cmd_no)
 {
@@ -2209,6 +2228,9 @@ int mwifiex_sta_prepare_cmd(struct mwifiex_private *priv, uint16_t cmd_no,
 	case HostCmd_CMD_FW_DUMP_EVENT:
 		cmd_ptr->command = cpu_to_le16(cmd_no);
 		cmd_ptr->size = cpu_to_le16(S_DS_GEN);
+		break;
+	case HostCmd_CMD_STA_CONFIGURE:
+		ret = mwifiex_cmd_get_chan_info(cmd_ptr, cmd_action);
 		break;
 	default:
 		mwifiex_dbg(priv->adapter, ERROR,
