@@ -225,12 +225,16 @@ static void frontbuffer_release(struct kref *ref)
 	struct i915_vma *vma;
 
 	spin_lock(&obj->vma.lock);
-	for_each_ggtt_vma(vma, obj)
+	for_each_ggtt_vma(vma, obj) {
+		i915_vma_clear_scanout(vma);
 		vma->display_alignment = I915_GTT_MIN_ALIGNMENT;
+	}
 	spin_unlock(&obj->vma.lock);
 
 	RCU_INIT_POINTER(obj->frontbuffer, NULL);
 	spin_unlock(&to_i915(obj->base.dev)->fb_tracking.lock);
+
+	i915_active_fini(&front->write);
 
 	i915_gem_object_put(obj);
 	kfree_rcu(front, rcu);
@@ -302,12 +306,14 @@ void intel_frontbuffer_track(struct intel_frontbuffer *old,
 		     BITS_PER_TYPE(atomic_t));
 
 	if (old) {
-		WARN_ON(!(atomic_read(&old->bits) & frontbuffer_bits));
+		drm_WARN_ON(old->obj->base.dev,
+			    !(atomic_read(&old->bits) & frontbuffer_bits));
 		atomic_andnot(frontbuffer_bits, &old->bits);
 	}
 
 	if (new) {
-		WARN_ON(atomic_read(&new->bits) & frontbuffer_bits);
+		drm_WARN_ON(new->obj->base.dev,
+			    atomic_read(&new->bits) & frontbuffer_bits);
 		atomic_or(frontbuffer_bits, &new->bits);
 	}
 }

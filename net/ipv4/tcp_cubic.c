@@ -104,16 +104,7 @@ struct bictcp {
 
 static inline void bictcp_reset(struct bictcp *ca)
 {
-	ca->cnt = 0;
-	ca->last_max_cwnd = 0;
-	ca->last_cwnd = 0;
-	ca->last_time = 0;
-	ca->bic_origin_point = 0;
-	ca->bic_K = 0;
-	ca->delay_min = 0;
-	ca->epoch_start = 0;
-	ca->ack_cnt = 0;
-	ca->tcp_cwnd = 0;
+	memset(ca, 0, offsetof(struct bictcp, unused));
 	ca->found = 0;
 }
 
@@ -432,10 +423,9 @@ static void hystart_update(struct sock *sk, u32 delay)
 
 	if (hystart_detect & HYSTART_DELAY) {
 		/* obtain the minimum delay of more than sampling packets */
+		if (ca->curr_rtt > delay)
+			ca->curr_rtt = delay;
 		if (ca->sample_cnt < HYSTART_MIN_SAMPLES) {
-			if (ca->curr_rtt > delay)
-				ca->curr_rtt = delay;
-
 			ca->sample_cnt++;
 		} else {
 			if (ca->curr_rtt > ca->delay_min +

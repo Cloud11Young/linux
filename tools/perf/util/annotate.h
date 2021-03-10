@@ -32,6 +32,7 @@ struct ins {
 struct ins_operands {
 	char	*raw;
 	char	*raw_comment;
+	char	*raw_func_start;
 	struct {
 		char	*raw;
 		char	*name;
@@ -144,7 +145,7 @@ struct annotation_line {
 	u32			 idx;
 	int			 idx_asm;
 	int			 data_nr;
-	struct annotation_data	 data[0];
+	struct annotation_data	 data[];
 };
 
 struct disasm_line {
@@ -227,7 +228,7 @@ void symbol__calc_percent(struct symbol *sym, struct evsel *evsel);
 struct sym_hist {
 	u64		      nr_samples;
 	u64		      period;
-	struct sym_hist_entry addr[0];
+	struct sym_hist_entry addr[];
 };
 
 struct cyc_hist {

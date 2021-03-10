@@ -316,21 +316,31 @@ void isst_ctdp_display_core_info(int cpu, FILE *outf, char *prefix,
 {
 	char header[256];
 	char value[256];
+	int level = 1;
 
-	snprintf(header, sizeof(header), "package-%d",
-		 get_physical_package_id(cpu));
-	format_and_print(outf, 1, header, NULL);
-	snprintf(header, sizeof(header), "die-%d", get_physical_die_id(cpu));
-	format_and_print(outf, 2, header, NULL);
-	snprintf(header, sizeof(header), "cpu-%d", cpu);
-	format_and_print(outf, 3, header, NULL);
+	if (out_format_is_json()) {
+		snprintf(header, sizeof(header), "package-%d:die-%d:cpu-%d",
+			 get_physical_package_id(cpu), get_physical_die_id(cpu),
+			 cpu);
+		format_and_print(outf, level++, header, NULL);
+	} else {
+		snprintf(header, sizeof(header), "package-%d",
+			 get_physical_package_id(cpu));
+		format_and_print(outf, level++, header, NULL);
+		snprintf(header, sizeof(header), "die-%d",
+			 get_physical_die_id(cpu));
+		format_and_print(outf, level++, header, NULL);
+		snprintf(header, sizeof(header), "cpu-%d", cpu);
+		format_and_print(outf, level++, header, NULL);
+	}
+
 	if (str0 && !val)
 		snprintf(value, sizeof(value), "%s", str0);
 	else if (str1 && val)
 		snprintf(value, sizeof(value), "%s", str1);
 	else
 		snprintf(value, sizeof(value), "%u", val);
-	format_and_print(outf, 4, prefix, value);
+	format_and_print(outf, level, prefix, value);
 
 	format_and_print(outf, 1, NULL, NULL);
 }
@@ -470,7 +480,7 @@ void isst_ctdp_display_information(int cpu, FILE *outf, int tdp_level,
 				_isst_pbf_display_information(cpu, outf,
 							      tdp_level,
 							  &ctdp_level->pbf_info,
-							      level + 1);
+							      level + 2);
 			continue;
 		}
 
@@ -752,4 +762,22 @@ void isst_display_error_info_message(int error, char *msg, int arg_valid, int ar
 	format_and_print(outf, 1, NULL, NULL);
 	if (!start)
 		format_and_print(outf, 0, NULL, NULL);
+}
+
+void isst_trl_display_information(int cpu, FILE *outf, unsigned long long trl)
+{
+	char header[256];
+	char value[256];
+	int level;
+
+	level = print_package_info(cpu, outf);
+
+	snprintf(header, sizeof(header), "get-trl");
+	format_and_print(outf, level + 1, header, NULL);
+
+	snprintf(header, sizeof(header), "trl");
+	snprintf(value, sizeof(value), "0x%llx", trl);
+	format_and_print(outf, level + 2, header, value);
+
+	format_and_print(outf, level, NULL, NULL);
 }
